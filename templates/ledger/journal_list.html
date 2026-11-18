@@ -1,0 +1,29 @@
+{% extends "ledger/base.html" %}
+{% block title %}Jurnal{% endblock %}
+{% block content %}
+<header class="dash-header"><div><p class="eyebrow">JURNAL</p><h1>Semua entri jurnal.</h1></div><div class="user">SESI TERVERIFIKASI <b>{{ request.user.get_username }}</b></div></header>
+{% if messages %}{% for message in messages %}<p class="portal-message {{ message.tags }}">{{ message }}</p>{% endfor %}{% endif %}
+<section class="panel ledger-list-panel">
+  <div class="panel-title"><p class="eyebrow">RIWAYAT JURNAL</p><span>{{ entries|length }} entri</span></div>
+  <table class="wide-table"><thead><tr><th>REFERENSI</th><th>TANGGAL</th><th>KETERANGAN</th><th>TOTAL</th><th>STATUS</th><th>RINCIAN</th><th>AKSI</th></tr></thead><tbody>
+    {% for entry in entries %}
+    <tr>
+      <td>{{ entry.reference }}{% if entry.reversal_of %}<small class="muted-line">membalik {{ entry.reversal_of.reference }}</small>{% endif %}</td>
+      <td>{{ entry.posting_date|date:"d M Y" }}</td>
+      <td title="{{ entry.narration }}">{{ entry.narration|truncatechars:56 }}</td>
+      <td>{{ entry.debit_total|floatformat:"2g" }}{% if entry.debit_total != entry.credit_total %}<small class="draft">TIDAK SEIMBANG</small>{% endif %}</td>
+      <td>{% if entry.is_posted %}<span class="posted">DIPOSTING</span>{% if entry.has_reversal %}<small class="muted-line">sudah dibalik</small>{% endif %}{% else %}<span class="draft">DRAF</span>{% endif %}</td>
+      <td><details><summary>Lihat baris ({{ entry.lines.all|length }})</summary><ul>{% for line in entry.lines.all %}<li>{{ line.account.code }} {{ line.account.name }} — D {{ line.debit|floatformat:"2g" }} / K {{ line.credit|floatformat:"2g" }}</li>{% empty %}<li>Belum ada baris jurnal.</li>{% endfor %}</ul></details></td>
+      <td class="row-actions">
+        {% if not entry.is_posted %}
+          {% if entry.can_post and perms.ledger.change_journalheader %}<form method="post" action="{% url 'ledger:journal-post' entry.id %}" data-confirm="Posting jurnal {{ entry.reference }}? Jurnal yang diposting tidak dapat diubah atau dihapus.">{% csrf_token %}<button class="post-journal" type="submit">Posting</button></form>{% endif %}
+          {% if perms.ledger.delete_journalheader %}<form method="post" action="{% url 'ledger:journal-delete' entry.id %}" data-confirm="Hapus jurnal draf {{ entry.reference }}?">{% csrf_token %}<button class="delete-journal" type="submit">Hapus</button></form>{% endif %}
+        {% elif entry.can_reverse and perms.ledger.add_journalheader %}
+          <form method="post" action="{% url 'ledger:journal-reverse' entry.id %}" data-confirm="Buat dan posting jurnal pembalik untuk {{ entry.reference }}?">{% csrf_token %}<button class="reverse-journal" type="submit">Balik</button></form>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="7" class="empty">Belum ada entri jurnal.</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+{% endblock %}

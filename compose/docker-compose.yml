@@ -1,0 +1,56 @@
+services:
+  web:
+    build:
+      context: ..
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    command: >-
+      sh -c "python manage.py migrate --noinput &&
+      python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ..:/app
+    ports:
+      - "8000:8000"
+    networks:
+      - edge
+      - ledger_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - ledger_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - ledger_internal
+
+networks:
+  edge:
+  ledger_internal:
+    internal: true
+
+volumes:
+  postgres_data:
+  redis_data:

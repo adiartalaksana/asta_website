@@ -1,0 +1,12 @@
+{% extends "ledger/base.html" %}
+{% block title %}Chart of Accounts{% endblock %}
+{% block content %}
+<header class="dash-header"><div><p class="eyebrow">CHART OF ACCOUNTS</p><h1>Struktur akun.</h1></div><div class="user">SESI TERVERIFIKASI <b>{{ request.user.get_username }}</b></div></header>
+<section class="panel ledger-list-panel">
+  <div class="panel-title"><p class="eyebrow">DAFTAR AKUN</p><span>{{ accounts|length }} akun</span></div>
+  <table class="wide-table"><thead><tr><th>KODE</th><th>NAMA AKUN</th><th>TIPE</th><th>MATA UANG</th><th>SALDO SAAT INI</th><th>STATUS</th></tr></thead><tbody>
+    {% for account in accounts %}<tr><td>{{ account.code }}</td><td>{{ account.name }}</td><td>{{ account.get_account_type_display }}</td><td>{{ account.currency.code }}</td><td>{{ account.current_balance|floatformat:"2g" }}</td><td><span class="{% if account.is_active %}posted{% else %}draft{% endif %}">{% if account.is_active %}AKTIF{% else %}NONAKTIF{% endif %}</span></td></tr>
+    {% empty %}<tr><td colspan="6" class="empty">Belum ada akun yang tersedia.</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+{% endblock %}

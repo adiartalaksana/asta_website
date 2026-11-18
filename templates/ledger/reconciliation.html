@@ -1,0 +1,12 @@
+{% extends "ledger/base.html" %}
+{% block title %}Rekonsiliasi{% endblock %}
+{% block content %}
+<header class="dash-header"><div><p class="eyebrow">REKONSILIASI</p><h1>Kontrol saldo jurnal.</h1></div><div class="user">ENTRI SEIMBANG <b>{{ balanced_count }} / {{ entries|length }}</b></div></header>
+<section class="panel ledger-list-panel">
+  <div class="panel-title"><p class="eyebrow">PEMERIKSAAN DOUBLE-ENTRY</p><span>Entri yang sudah diposting</span></div>
+  <table class="wide-table"><thead><tr><th>REFERENSI</th><th>TANGGAL</th><th>TOTAL DEBIT</th><th>TOTAL KREDIT</th><th>HASIL</th></tr></thead><tbody>
+    {% for entry in entries %}<tr><td>{{ entry.reference }}</td><td>{{ entry.posting_date|date:"d M Y" }}</td><td>{{ entry.debit_total|floatformat:"2g" }}</td><td>{{ entry.credit_total|floatformat:"2g" }}</td><td><span class="{% if entry.is_balanced %}posted{% else %}draft{% endif %}">{% if entry.is_balanced %}SEIMBANG{% else %}PERLU DITINJAU{% endif %}</span></td></tr>
+    {% empty %}<tr><td colspan="5" class="empty">Belum ada jurnal yang diposting untuk direkonsiliasi.</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+{% endblock %}

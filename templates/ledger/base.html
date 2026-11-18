@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Portal Klien{% endblock %} | Asta Asa Abadi</title>
+  <meta name="theme-color" content="#0b1017">
+  {% include "partials/favicons.html" %}
+  {% include "partials/theme_init.html" %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/platform.css' %}">
+  <script src="{% static 'js/theme.js' %}" defer></script>
+  <script src="{% static 'js/ledger.js' %}" defer></script>
+</head>
+<body class="dashboard">
+  <aside class="sidebar">
+    <a class="brand" href="{% url 'home' %}" aria-label="Asta Asa Abadi">{% include "partials/logo_full.html" with id_prefix="sb" class="brand-logo" %}</a>
+    <p>PORTAL KLIEN</p>
+    <nav aria-label="Navigasi portal">
+      <a class="{% if not active_section %}active{% endif %}" href="{% url 'ledger:dashboard' %}">▦ Ringkasan</a>
+      <a class="{% if active_section == 'journals' %}active{% endif %}" href="{% url 'ledger:journal-list' %}">≡ Jurnal</a>
+      <a class="{% if active_section == 'accounts' %}active{% endif %}" href="{% url 'ledger:account-list' %}">◫ Chart of Accounts</a>
+      <a class="{% if active_section == 'statements' %}active{% endif %}" href="{% url 'ledger:bank-statement-list' %}">▤ Rekening Koran</a>
+      <a class="{% if active_section == 'reconciliation' %}active{% endif %}" href="{% url 'ledger:reconciliation' %}">◌ Rekonsiliasi</a>
+      <a class="{% if active_section == 'audit' %}active{% endif %}" href="{% url 'ledger:audit-trail' %}">⌘ Audit Trail</a>
+      {% if perms.auth.change_user %}<a class="{% if active_section == 'users' %}active{% endif %}" href="{% url 'portal_users:list' %}">◎ Pengguna</a>{% endif %}
+    </nav>
+    <div class="sidebar-bottom">
+      {% include "partials/theme_toggle.html" with extra_class="sidebar-theme" label="Tema terang / gelap" %}
+      <a class="{% if active_section == 'my-password' %}is-current{% endif %}" href="{% url 'portal_users:my-password' %}">◇ Ganti kata sandi</a>
+      <a href="{% url 'home' %}">← Kembali ke situs utama</a>
+      <form method="post" action="{% url 'portal-logout' %}">{% csrf_token %}<button class="logout-button" type="submit">Keluar ({{ request.user.get_username }})</button></form>
+    </div>
+  </aside>
+  <main class="dashboard-main">
+    <div class="mobile-topbar"><a class="mobile-brand" href="{% url 'home' %}" aria-label="Asta Asa Abadi">{% include "partials/logo_full.html" with id_prefix="mb" class="brand-logo" %}</a>{% include "partials/theme_toggle.html" with extra_class="mobile-theme" %}</div>
+    <nav class="mobile-portal-nav" aria-label="Navigasi portal (seluler)">
+      <a class="{% if not active_section %}active{% endif %}" href="{% url 'ledger:dashboard' %}">Ringkasan</a>
+      <a class="{% if active_section == 'journals' %}active{% endif %}" href="{% url 'ledger:journal-list' %}">Jurnal</a>
+      <a class="{% if active_section == 'accounts' %}active{% endif %}" href="{% url 'ledger:account-list' %}">COA</a>
+      <a class="{% if active_section == 'statements' %}active{% endif %}" href="{% url 'ledger:bank-statement-list' %}">Rekening</a>
+      <a class="{% if active_section == 'reconciliation' %}active{% endif %}" href="{% url 'ledger:reconciliation' %}">Rekonsiliasi</a>
+      <a class="{% if active_section == 'audit' %}active{% endif %}" href="{% url 'ledger:audit-trail' %}">Audit</a>
+      {% if perms.auth.change_user %}<a class="{% if active_section == 'users' %}active{% endif %}" href="{% url 'portal_users:list' %}">Pengguna</a>{% endif %}
+      <a class="{% if active_section == 'my-password' %}active{% endif %}" href="{% url 'portal_users:my-password' %}">Kata sandi</a>
+      <form method="post" action="{% url 'portal-logout' %}">{% csrf_token %}<button class="logout-button" type="submit">Keluar</button></form>
+    </nav>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

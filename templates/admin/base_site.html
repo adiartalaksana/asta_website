@@ -1,0 +1,19 @@
+{% extends "admin/base.html" %}
+{% load static %}
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Asta Asa Abadi{% endblock %}
+{% block extrahead %}{{ block.super }}{% include "partials/favicons.html" %}
+<style>
+  :root, html[data-theme="light"] { --primary: #1d2a38; --secondary: #2c4357; --header-bg: #0b1017; --header-color: #dce8f4; --header-link-color: #ffffff; --header-branding-color: #ffffff; --link-fg: #4b6f91; --link-hover-color: #2c4357; --button-bg: #1d2a38; --button-hover-bg: #4b6f91; --default-button-bg: #4b6f91; --default-button-hover-bg: #1d2a38; }
+  html[data-theme="dark"] { --primary: #1d2a38; --secondary: #2c4357; --header-bg: #0b1017; --header-color: #dce8f4; --header-link-color: #ffffff; --header-branding-color: #ffffff; --link-fg: #a8c6e2; --link-hover-color: #dce8f4; --button-bg: #2c4357; --button-hover-bg: #4b6f91; --default-button-bg: #4b6f91; --default-button-hover-bg: #2c4357; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --primary: #1d2a38; --secondary: #2c4357; --header-bg: #0b1017; --header-color: #dce8f4; --header-link-color: #ffffff; --header-branding-color: #ffffff; --link-fg: #a8c6e2; --link-hover-color: #dce8f4; --button-bg: #2c4357; --button-hover-bg: #4b6f91; --default-button-bg: #4b6f91; --default-button-hover-bg: #2c4357; } }
+  #header { background: radial-gradient(60% 140% at 0% 0%, #16283b, #0b1017 70%); }
+  #site-name a { display: flex; align-items: center; gap: 14px; color: #fff; }
+  #branding .admin-logo { height: 40px; width: auto; color: #fff; }
+  #branding .admin-title { font-size: 15px; font-weight: 600; letter-spacing: .02em; color: #dce8f4; }
+</style>
+{% endblock %}
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}">{% include "partials/logo_full.html" with id_prefix="ad" class="admin-logo" %}<span class="admin-title">Administrasi</span></a></div>
+{% if user.is_anonymous %}{% include "admin/color_theme_toggle.html" %}{% endif %}
+{% endblock %}
+{% block nav-global %}{% endblock %}

@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Asta Asa Abadi — Konsultan Pajak untuk bisnis yang bertumbuh">
+  <meta name="theme-color" content="#07090d">
+  <title>Asta Asa Abadi | Tax Consulting</title>
+  {% include "partials/theme_init.html" %}
+  {% include "partials/favicons.html" %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+  <script src="{% static 'js/theme.js' %}" defer></script>
+  <script src="{% static 'js/company.js' %}" defer></script>
+</head>
+<body class="immersive">
+  <div class="scroll-progress" aria-hidden="true"><i></i></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="brand" href="{% url 'home' %}" aria-label="Asta Asa Abadi">{% include "partials/logo_full.html" with id_prefix="hd" class="brand-logo" %}</a>
+    <nav class="primary-nav" aria-label="Primary navigation">
+      <a href="#capabilities" data-i18n="navPlatform">Layanan</a>
+      <a href="#governance" data-i18n="navGovernance">Pendekatan Kami</a>
+      <a href="#company" data-i18n="navCompany">Tentang Kami</a>
+    </nav>
+    <div class="header-actions">
+      {% include "partials/theme_toggle.html" %}
+      <button class="language-toggle" type="button" aria-label="Switch language">EN</button>
+      <a class="portal-link" {% if user.is_authenticated %}href="{% url 'ledger:dashboard' %}"{% else %}href="#portal-login" data-login-modal{% endif %}><span data-i18n="portal">Portal Klien</span> <b>↗</b></a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Menu"><span></span><span></span></button>
+    </div>
+  </header>
+  <nav class="mobile-menu" id="mobile-menu" aria-label="Mobile navigation">
+    <a href="#capabilities"><span data-i18n="navPlatform">Layanan</span><b>01</b></a>
+    <a href="#governance"><span data-i18n="navGovernance">Pendekatan Kami</span><b>02</b></a>
+    <a href="#company"><span data-i18n="navCompany">Tentang Kami</span><b>03</b></a>
+    <a class="mobile-portal" {% if user.is_authenticated %}href="{% url 'ledger:dashboard' %}"{% else %}href="#portal-login" data-login-modal{% endif %}><span data-i18n="portal">Portal Klien</span><b>↗</b></a>
+  </nav>
+
+  <main>
+    <section class="hero" data-spotlight>
+      <canvas class="pulse-canvas" aria-hidden="true"></canvas>
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span><span data-i18n="heroEyebrow">KONSULTASI PAJAK & BISNIS</span></p>
+        <h1 class="hero-title" data-i18n-html="heroTitle">Pajak lebih tenang,<br>bisnis lebih <em>berkembang.</em></h1>
+        <p class="hero-lead" data-i18n="heroLead">Asta Asa Abadi mendampingi individu dan bisnis memahami kewajiban pajak, mengelola risiko, serta membuat keputusan yang lebih mantap.</p>
+        <div class="actions">
+          <a class="button primary magnetic" href="#contact"><span data-i18n="demo">Jadwalkan konsultasi</span> <b>→</b></a>
+          <a class="text-link" href="#capabilities"><span data-i18n="explore">Lihat layanan kami</span> <b>↓</b></a>
+        </div>
+        <div class="hero-proof"><span><b>Bali</b><small>Indonesia</small></span><span><b>1:1</b><small data-i18n="proofAssurance">pendampingan ahli</small></span><span><b>∞</b><small data-i18n="proofLongTerm">kemitraan jangka panjang</small></span></div>
+      </div>
+      <div class="hero-mark" aria-hidden="true">
+        <div class="mark-orbit orbit-1"></div>
+        <div class="mark-orbit orbit-2"></div>
+        <div class="mark-glow"></div>
+        <div class="mark-tilt">
+          <svg class="mark-svg" viewBox="250 314 300 438">
+            <defs>
+              <linearGradient id="markShine" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color: var(--mark-1)"/><stop offset=".55" style="stop-color: var(--mark-2)"/><stop offset="1" style="stop-color: var(--mark-3)"/></linearGradient>
+            </defs>
+            <path class="mark-top" fill="url(#markShine)" d="M 375.855469 571.890625 L 424.675781 377.949219 C 426.054688 372.480469 433.824219 372.476562 435.207031 377.945312 L 451.5625 442.628906 C 453.800781 451.484375 461.769531 457.6875 470.902344 457.6875 L 537.179688 457.6875 L 475.667969 325.890625 L 383.96875 325.890625 L 262.117188 586.96875 L 356.507812 586.96875 C 365.652344 586.96875 373.625 580.753906 375.855469 571.890625 Z"/>
+            <path class="mark-bottom" fill="url(#markShine)" d="M 423.441406 494.035156 L 374.621094 687.976562 C 373.242188 693.445312 365.472656 693.449219 364.089844 687.980469 L 347.734375 623.296875 C 345.496094 614.441406 337.527344 608.238281 328.394531 608.238281 L 262.117188 608.238281 L 323.628906 740.035156 L 415.328125 740.035156 L 537.179688 478.957031 L 442.785156 478.957031 C 433.644531 478.957031 425.671875 485.171875 423.441406 494.035156 Z"/>
+          </svg>
+        </div>
+      </div>
+      <a class="scroll-cue" href="#capabilities"><span data-i18n="scroll">Gulir</span><i></i></a>
+    </section>
+
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        {% for _ in "12" %}<span>Tax Advisory</span>{% include "partials/logo_mark.html" with class="marquee-mark" %}<span>Tax Compliance</span>{% include "partials/logo_mark.html" with class="marquee-mark" %}<span>Business Support</span>{% include "partials/logo_mark.html" with class="marquee-mark" %}<span>Bali — Indonesia</span>{% include "partials/logo_mark.html" with class="marquee-mark" %}{% endfor %}
+      </div>
+    </div>
+
+    <section class="section services" id="capabilities">
+      <div class="section-head">
+        <div><p class="eyebrow"><span></span><span data-i18n="platformLabel">LAYANAN KAMI / 01</span></p><h2 data-i18n-html="platformTitle">Pajak lebih jelas.<br><em>Langkah lebih terarah.</em></h2></div>
+        <p class="section-copy" data-i18n="platformCopy">Dukungan praktis untuk memenuhi kewajiban, mengantisipasi perubahan, dan menjaga bisnis tetap bergerak dengan percaya diri.</p>
+      </div>
+      <div class="service-grid">
+        <article class="service-card reveal" data-spotlight>
+          <span class="number">01</span>
+          <svg class="service-icon" viewBox="0 0 48 48" aria-hidden="true"><path pathLength="1" d="M8 38h32M12 38V22m8 16V14m8 24V26m8 12V10"/></svg>
+          <h3 data-i18n-html="journalingTitle">Tax<br>Advisory</h3>
+          <p data-i18n="journalingCopy">Saran pajak yang relevan untuk keputusan bisnis, investasi, dan kebutuhan pribadi Anda.</p>
+          <a href="#contact"><span data-i18n="openLedger">Konsultasikan kebutuhan Anda</span> <b>→</b></a>
+        </article>
+        <article class="service-card reveal" data-spotlight>
+          <span class="number">02</span>
+          <svg class="service-icon" viewBox="0 0 48 48" aria-hidden="true"><path pathLength="1" d="M14 6h20l8 8v28H14zM34 6v8h8M20 24h14M20 31h14M20 17h6"/><path pathLength="1" d="m6 30 4 4 7-8"/></svg>
+          <h3 data-i18n-html="classificationTitle">Tax<br>Compliance</h3>
+          <p data-i18n="classificationCopy">Pendampingan pelaporan dan kepatuhan yang rapi agar Anda dapat fokus menjalankan bisnis.</p>
+          <a href="#contact"><span data-i18n="seeArchitecture">Temukan solusi</span> <b>→</b></a>
+        </article>
+        <article class="service-card reveal" data-spotlight>
+          <span class="number">03</span>
+          <svg class="service-icon" viewBox="0 0 48 48" aria-hidden="true"><path pathLength="1" d="M6 34 18 22l8 8 16-16M32 14h10v10"/></svg>
+          <h3 data-i18n-html="assuranceTitle">Business<br>Support</h3>
+          <p data-i18n="assuranceCopy">Wawasan yang membantu Anda membaca peluang, mengelola risiko, dan bertumbuh secara sehat.</p>
+          <a href="#contact"><span data-i18n="exploreGovernance">Bicara dengan kami</span> <b>→</b></a>
+        </article>
+      </div>
+    </section>
+
+    <section class="governance" id="governance" data-spotlight>
+      {% include "partials/logo_mark.html" with class="governance-watermark" %}
+      <div class="governance-inner">
+        <p class="eyebrow"><span></span><span data-i18n="governanceLabel">PENDAMPINGAN YANG BERARTI / 02</span></p>
+        <h2 data-i18n-html="governanceTitle">Pajak bukan hanya<br>tentang angka. Ini tentang<br><em>masa depan.</em></h2>
+        <p class="section-copy" data-i18n="governanceCopy">Kami menyederhanakan hal yang kompleks agar Anda memiliki ruang lebih besar untuk membangun bisnis dan hidup yang Anda inginkan.</p>
+        <div class="governance-points">
+          <article class="reveal"><b>01</b><strong data-i18n="immutableDefault">Bahasa yang mudah dipahami</strong><span data-i18n="immutableCopy">Kami menerjemahkan aturan pajak menjadi langkah yang jelas.</span></article>
+          <article class="reveal"><b>02</b><strong data-i18n="privateArchitecture">Kerahasiaan yang dijaga</strong><span data-i18n="privateCopy">Informasi Anda selalu ditangani dengan profesional dan hati-hati.</span></article>
+          <article class="reveal"><b>03</b><strong data-i18n="evidenceAccountability">Pendampingan yang responsif</strong><span data-i18n="evidenceCopy">Kami hadir untuk membantu saat Anda membutuhkan arahan.</span></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section about" id="company">
+      <p class="eyebrow"><span></span><span data-i18n="aboutLabel">TENTANG ASTA ASA ABADI / 03</span></p>
+      <p class="about-statement" data-words data-i18n="companyStatement">Kami percaya pajak seharusnya tidak menjadi penghalang bagi ambisi Anda. Asta Asa Abadi adalah mitra konsultasi untuk individu dan bisnis yang ingin melangkah dengan lebih yakin.</p>
+      <a class="text-link" href="#contact"><span data-i18n="discover">Kenali pendekatan kami</span> <b>→</b></a>
+    </section>
+
+    <section class="final-cta" id="contact" data-spotlight>
+      {% include "partials/logo_mark.html" with class="cta-mark" %}
+      <p class="eyebrow"><span></span><span data-i18n="ctaEyebrow">MULAI DENGAN PERCAKAPAN</span></p>
+      <h2 data-i18n-html="ctaTitle">Mari jadikan pajak<br>lebih <em>sederhana.</em></h2>
+      <div class="actions">
+        <a class="button primary magnetic" href="mailto:hello@astaasaabadi.co.id"><span data-i18n="demo">Jadwalkan konsultasi</span> <b>→</b></a>
+        <a class="button ghost" {% if user.is_authenticated %}href="{% url 'ledger:dashboard' %}"{% else %}href="#portal-login" data-login-modal{% endif %}><span data-i18n="portal">Portal Klien</span> <b>↗</b></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-main">
+      <a class="brand" href="{% url 'home' %}" aria-label="Asta Asa Abadi">{% include "partials/logo_full.html" with id_prefix="ft" class="footer-logo" %}</a>
+      <p data-i18n-html="footerStatement">Konsultasi pajak yang personal<br>untuk langkah bisnis yang lebih pasti.</p>
+      <a class="text-link" {% if user.is_authenticated %}href="{% url 'ledger:dashboard' %}"{% else %}href="#portal-login" data-login-modal{% endif %}><span data-i18n="accessLedger">Akses Portal Klien</span> <b>↗</b></a>
+    </div>
+    <div class="footer-meta"><span>© 2026 Asta Asa Abadi</span><span>ASTA · ASA · ABADI</span><span>BALI · INDONESIA</span></div>
+  </footer>
+
+  <div class="login-modal" id="portal-login" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <div class="login-backdrop" data-close-login></div>
+    <section class="login-panel">
+      <button class="login-close" type="button" aria-label="Tutup login" data-close-login>×</button>
+      {% include "partials/logo_full.html" with id_prefix="lg" class="login-logo" label="Asta Asa Abadi" %}
+      <p class="eyebrow"><span></span><span data-i18n="loginEyebrow">PORTAL AMAN</span></p>
+      <h2 id="login-title" data-i18n="loginTitle">Masuk ke Portal Klien</h2>
+      <p class="login-intro" data-i18n="loginIntro">Gunakan akun perusahaan Anda untuk melanjutkan.</p>
+      {% if messages %}{% for message in messages %}<p class="{% if message.level_tag == 'error' %}login-error{% else %}login-notice{% endif %}" role="alert">{{ message }}</p>{% endfor %}{% endif %}
+      <form method="post" action="{% url 'portal-login' %}">
+        {% csrf_token %}
+        {% url 'ledger:dashboard' as dashboard_url %}
+        <input type="hidden" name="next" value="{{ request.GET.next|default:dashboard_url }}">
+        <label><span data-i18n="username">Nama pengguna</span><input name="username" type="text" autocomplete="username" required></label>
+        <label><span data-i18n="password">Kata sandi</span><input name="password" type="password" autocomplete="current-password" required></label>
+        <button class="button primary login-submit" type="submit"><span data-i18n="login">Masuk aman</span> <b>→</b></button>
+      </form>
+    </section>
+  </div>
+</body>
+</html>

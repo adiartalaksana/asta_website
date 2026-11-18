@@ -1,0 +1,29 @@
+{% extends "ledger/base.html" %}
+{% block title %}Rekening Koran{% endblock %}
+{% block content %}
+<header class="dash-header"><div><p class="eyebrow">REKENING KORAN</p><h1>Baca dan tinjau mutasi.</h1></div><div class="user">FORMAT DIDUKUNG <b>XLSX · CSV · PDF · GAMBAR</b></div></header>
+{% if perms.ledger.add_bankstatement or perms.ledger.add_bankstatementdocument %}<section class="statement-upload panel">
+  <div><p class="eyebrow">IMPOR REKENING KORAN</p><h2>Tambahkan file mutasi baru.</h2><p>XLSX dan CSV terstruktur akan divalidasi sebagai transaksi. PDF dan gambar dibaca oleh AI Gemini, diringkas, lalu setiap saldo diperiksa ulang oleh server sebelum dapat digunakan.</p></div>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label class="file-input"><span data-file-label>Pilih XLSX, CSV, PDF, atau gambar</span><input name="statement_file" type="file" accept=".xlsx,.csv,.pdf,.png,.jpg,.jpeg,.webp,.tif,.tiff" required></label>
+    <button class="button gold" type="submit">Baca rekening koran <b>→</b></button>
+  </form>
+</section>{% endif %}
+{% if messages %}{% for message in messages %}<p class="portal-message {{ message.tags }}">{{ message }}</p>{% endfor %}{% endif %}
+{% if documents %}
+<section class="panel ledger-list-panel">
+  <div class="panel-title"><p class="eyebrow">DOKUMEN MENUNGGU REVIEW</p><span>{{ documents|length }} dokumen terbaru</span></div>
+  <table class="wide-table"><thead><tr><th>NAMA FILE</th><th>FORMAT</th><th>DIUNGGAH</th><th>STATUS</th><th></th></tr></thead><tbody>
+    {% for document in documents %}<tr><td>{{ document.source_name }}</td><td>{{ document.source_type|upper }}</td><td>{{ document.created_at|date:"d M Y, H:i" }}</td><td><span class="{% if document.status == 'verified' %}posted{% else %}draft{% endif %}">{% if document.status == 'verified' %}TERVERIFIKASI{% else %}PERLU REVIEW{% endif %}</span></td><td><a class="table-link" href="{% url 'ledger:bank-statement-document-detail' document.id %}">{% if document.status == 'verified' %}Lihat hasil →{% else %}Tinjau hasil AI →{% endif %}</a> <form class="inline-delete" method="post" action="{% url 'ledger:bank-statement-document-delete' document.id %}" data-confirm="Hapus dokumen ini?">{% csrf_token %}<button class="delete-journal" type="submit">Hapus</button></form></td></tr>{% endfor %}
+  </tbody></table>
+</section>
+{% endif %}
+<section class="panel ledger-list-panel">
+  <div class="panel-title"><p class="eyebrow">RIWAYAT IMPOR</p><span>{{ statements|length }} file</span></div>
+  <table class="wide-table"><thead><tr><th>BANK</th><th>REKENING</th><th>PERIODE</th><th>TRANSAKSI</th><th>REVIEW</th><th>STATUS</th><th></th></tr></thead><tbody>
+    {% for statement in statements %}<tr><td>{{ statement.bank_name }}</td><td>{{ statement.masked_account_number }}</td><td>{{ statement.period_start|date:"d M Y" }} — {{ statement.period_end|date:"d M Y" }}</td><td>{{ statement.transaction_count }}</td><td>{{ statement.review_count }}</td><td><span class="{% if statement.is_reconciled %}posted{% else %}draft{% endif %}">{% if statement.is_reconciled %}SESUAI{% else %}PERLU DITINJAU{% endif %}</span></td><td><a class="table-link" href="{% url 'ledger:bank-statement-detail' statement.id %}">Buka →</a></td></tr>
+    {% empty %}<tr><td colspan="7" class="empty">Belum ada rekening koran yang diimpor.</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+{% endblock %}

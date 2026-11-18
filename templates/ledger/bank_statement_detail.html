@@ -1,0 +1,58 @@
+{% extends "ledger/base.html" %}
+{% block title %}Mutasi Rekening{% endblock %}
+{% block content %}
+<header class="dash-header"><div><p class="eyebrow">MUTASI REKENING / {{ statement.bank_name }}</p><h1>{{ statement.period_start|date:"d M Y" }} — {{ statement.period_end|date:"d M Y" }}</h1></div><div class="detail-actions"><a class="text-link" href="{% url 'ledger:bank-statement-list' %}">← Semua rekening koran</a><form method="post" action="{% url 'ledger:bank-statement-delete' statement.id %}" data-confirm="Hapus rekening koran beserta jurnal draf terkait?">{% csrf_token %}<button class="delete-journal" type="submit">Hapus rekening koran</button></form></div></header>
+{% if messages %}{% for message in messages %}<p class="portal-message {{ message.tags }}">{{ message }}</p>{% endfor %}{% endif %}
+<section class="stat-grid statement-stats">
+  <article><p>SALDO AWAL</p><strong>Rp {{ statement.opening_balance|floatformat:"2g" }}</strong></article>
+  <article><p>SALDO AKHIR</p><strong>Rp {{ statement.closing_balance|floatformat:"2g" }}</strong></article>
+  <article><p>STATUS SALDO</p><strong class="{% if statement.is_reconciled %}posted{% else %}draft{% endif %}">{% if statement.is_reconciled %}Sesuai{% else %}Tinjau{% endif %}</strong>{% if not statement.is_reconciled %}<small>Saldo dari mutasi: Rp {{ calculated_closing|floatformat:"2g" }}{% if closing_difference %} · selisih Rp {{ closing_difference|floatformat:"2g" }}{% endif %}</small>{% endif %}</article>
+  <article><p>DIIMPOR OLEH</p><strong>{{ statement.uploaded_by.get_username }}</strong><small>{{ statement.created_at|date:"d M Y, H:i" }}</small></article>
+</section>
+{% if not statement.is_reconciled %}
+<section class="manual-statement-form panel">
+  <div><p class="eyebrow">TAMBAH MUTASI MANUAL</p><h2>Lengkapi transaksi dari dokumen.</h2><p>Masukkan setiap mutasi sesuai hasil review dokumen. Rekonsiliasi tersedia setelah semua transaksi ditambahkan.</p></div>
+  <form method="post" action="{% url 'ledger:bank-statement-line-manual-add' statement.id %}">
+    {% csrf_token %}
+    <label>Tanggal & waktu<input name="transaction_at" type="datetime-local" required></label><label>Referensi<input name="reference"></label>
+    <label class="form-wide">Keterangan<input name="description" required></label>
+    <label>Arah dana<select name="direction" required><option value="debit">Dana masuk</option><option value="credit">Dana keluar</option></select></label>
+    <label>Nominal<input name="amount" type="number" step="0.0001" min="0.0001" required></label><label>Saldo setelah transaksi<input name="balance" type="number" step="0.0001" required></label>
+    <label>Akun COA<select name="account" required><option value="">Pilih akun</option>{% for account in accounts %}<option value="{{ account.id }}">{{ account.code }} — {{ account.name }}</option>{% endfor %}</select></label>
+    <button class="button outline" type="submit">Tambah mutasi</button>
+  </form>
+  <form class="reconcile-form" method="post" action="{% url 'ledger:bank-statement-reconcile' statement.id %}">{% csrf_token %}<button class="button gold" type="submit" {% if not lines %}disabled{% endif %}>Rekonsiliasi saldo <b>→</b></button></form>
+</section>
+{% endif %}
+<section class="statement-config panel">
+  <div><p class="eyebrow">SIAPKAN JURNAL DRAF</p><h2>{% if statement.is_verified %}Jurnal draf sudah dibuat.{% else %}Pilih akun dan verifikasi mutasi.{% endif %}</h2><p>{% if statement.is_verified %}Mutasi ini telah diverifikasi dan jurnal draf tersedia pada menu Jurnal serta Dashboard.{% else %}Pilih akun bank, petakan semua mutasi ke COA, kemudian verifikasi untuk membuat jurnal draf. Tidak ada jurnal yang akan diposting otomatis.{% endif %}</p></div>
+  {% if statement.is_verified %}
+  <span class="statement-verified">✓ TERVERIFIKASI</span>
+  {% else %}
+  <div class="statement-actions">
+    <form method="post" action="{% url 'ledger:bank-statement-bank-account' statement.id %}">
+      {% csrf_token %}
+      <label>Akun bank
+        <select name="bank_account" required>
+          <option value="">Pilih akun bank</option>
+          {% for account in accounts %}<option value="{{ account.id }}" {% if account.id == statement.bank_account_id %}selected{% endif %}>{{ account.code }} — {{ account.name }}</option>{% endfor %}
+        </select>
+      </label>
+      <button class="button outline" type="submit">Simpan akun bank</button>
+    </form>
+    <form method="post" action="{% url 'ledger:bank-statement-verify' statement.id %}">
+      {% csrf_token %}
+      <button class="button gold" type="submit" {% if not statement.is_reconciled or not statement.bank_account_id or unmapped_count %}disabled{% endif %}>Verifikasi & buat jurnal draf <b>→</b></button>
+      <small>{% if not statement.is_reconciled %}Rekonsiliasi saldo terlebih dahulu.{% elif unmapped_count %}{{ unmapped_count }} mutasi perlu dipetakan ke COA.{% elif not statement.bank_account_id %}Pilih akun bank terlebih dahulu.{% else %}Siap membuat jurnal draf.{% endif %}</small>
+    </form>
+  </div>
+  {% endif %}
+</section>
+<section class="panel ledger-list-panel">
+  <div class="panel-title"><p class="eyebrow">MUTASI TERBACA</p><div class="export-links"><a href="{% url 'ledger:bank-statement-export' statement.id 'xlsx' %}">XLSX</a><a href="{% url 'ledger:bank-statement-export' statement.id 'csv' %}">CSV</a><a href="{% url 'ledger:bank-statement-export' statement.id 'pdf' %}">PDF</a><a href="{% url 'ledger:bank-statement-export' statement.id 'png' %}">PNG</a><a href="{% url 'ledger:bank-statement-export' statement.id 'json' %}">JSON</a></div></div>
+  <table class="wide-table"><thead><tr><th>TANGGAL</th><th>REFERENSI</th><th>KETERANGAN</th><th>DANA MASUK</th><th>DANA KELUAR</th><th>SALDO</th><th>AKUN</th><th>STATUS</th>{% if not statement.is_reconciled %}<th></th>{% endif %}</tr></thead><tbody>
+    {% for line in lines %}<tr><td>{{ line.transaction_at|date:"d M Y, H:i" }}</td><td>{{ line.reference|default:"—" }}</td><td title="{{ line.description }}">{{ line.description|truncatechars:72 }}</td><td>{% if line.debit %}{{ line.debit|floatformat:"2g" }}{% else %}—{% endif %}</td><td>{% if line.credit %}{{ line.credit|floatformat:"2g" }}{% else %}—{% endif %}</td><td>{{ line.balance|floatformat:"2g" }}</td><td>{% if statement.is_verified %}{{ line.suggested_account.code }} — {{ line.suggested_account.name }}{% else %}<form class="line-mapping" method="post" action="{% url 'ledger:bank-statement-line-account' statement.id line.id %}">{% csrf_token %}<select name="account" required><option value="">Pilih akun</option>{% for account in accounts %}<option value="{{ account.id }}" {% if account.id == line.suggested_account_id %}selected{% endif %}>{{ account.code }} — {{ account.name }}</option>{% endfor %}</select><button type="submit">Simpan</button></form>{% endif %}</td><td>{% if line.journal_entry %}{% if line.journal_entry.is_posted %}<span class="posted">DIPOSTING</span>{% else %}<span class="draft">JURNAL DRAF</span>{% endif %}{% else %}<span class="{% if line.needs_review %}draft{% else %}posted{% endif %}">{% if line.needs_review %}REVIEW{% else %}TERPETAKAN{% endif %}</span>{% endif %}</td>{% if not statement.is_reconciled %}<td>{% if not line.journal_entry %}<form method="post" action="{% url 'ledger:bank-statement-line-delete' statement.id line.id %}" data-confirm="Hapus mutasi baris {{ line.source_row }}?">{% csrf_token %}<button class="delete-journal" type="submit">Hapus</button></form>{% endif %}</td>{% endif %}</tr>
+    {% empty %}<tr><td colspan="9" class="empty">Tidak ada mutasi pada rekening koran ini.</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+{% endblock %}

@@ -1,0 +1,9 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+staticfiles/
+# Uploaded client documents (bank statements) — never commit
+media/
+*.sqlite3
+.DS_Store

@@ -1,0 +1,9 @@
+{% extends "ledger/base.html" %}
+{% block title %}Akses ditolak{% endblock %}
+{% block content %}
+<header class="dash-header"><div><p class="eyebrow">AKSES DITOLAK</p><h1>Anda tidak memiliki izin.</h1></div></header>
+<section class="panel cms-card cms-narrow">
+  <p class="cms-copy">Peran akun Anda tidak mengizinkan tindakan atau halaman ini. Hubungi administrator portal jika Anda memerlukan akses tambahan.</p>
+  <div class="cms-actions"><a class="button gold" href="{% url 'ledger:dashboard' %}">Kembali ke ringkasan <b>→</b></a></div>
+</section>
+{% endblock %}
