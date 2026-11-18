@@ -36,7 +36,8 @@ The PostgreSQL and Redis containers run on the private `ledger_internal` Docker 
 | `apps.accounts` | Chart of Accounts, currencies, active-account validation, balance calculation |
 | `apps.ledger` | Batches, journal headers and lines, atomic posting, reversals, dashboard |
 | `apps.ai_engine` | Raw staging records, private LLM client, vector matching and categorization pipeline |
-| `apps.audit` | HMAC-SHA256 hash-chain audit records and verification |
+| `apps.audit` | HMAC-SHA256 hash-chain audit records and verification, security event log |
+| `apps.portal_users` | Internal CMS for portal accounts: roles, passwords, activation, login/activity logging |
 
 ## 4. Data lifecycle
 
@@ -72,12 +73,16 @@ Immutable journal lines + audit hash-chain event
 
 | URL | Purpose | Access |
 | --- | --- | --- |
-| `/` | Company landing page and platform overview | Public |
-| `/ledger/` | General Ledger dashboard | Authenticated user |
-| `/admin/` | Django administration and login | Authorized admin |
+| `/` | Company landing page (login popup at `/#portal-login`) | Public |
+| `/login/`, `/logout/` | Portal sign-in (keeps `?next=`) and sign-out (POST) | Public / signed-in |
+| `/ledger/` | General Ledger dashboard | Any portal account |
+| `/ledger/journals/`, `/ledger/accounts/`, `/ledger/bank-statements/`, `/ledger/reconciliation/`, `/ledger/audit/` | Ledger pages | Any portal account (actions need role permissions) |
+| `/ledger/users/` | Account CMS (see section 10) | Administrator / Super admin |
+| `/ledger/users/my-password/` | Change own password | Any portal account |
+| `/admin/` | Django administration (Chart of Accounts, currencies) | Administrator, Akuntan, Super admin |
 | `/health/` | Service health response | Platform monitoring |
 
-Landing-page CTAs point to `/ledger/`. Unauthenticated users are redirected to `/admin/login/` before accessing the dashboard.
+Unauthenticated visitors are sent to the landing-page login popup and returned to the requested page after signing in. Old Indonesian links `/ledger/pengguna/...` redirect to `/ledger/users/...`.
 
 ## 7. Database and environment
 
@@ -94,11 +99,20 @@ POSTGRES_PORT=5432
 
 ### Starting internal services
 
+The project lives in `/home/obey/Documents/Asta Asa Abadi/Website` (quote the path; it contains spaces).
+
 ```bash
-cd ledger_platform
-docker compose -f compose/docker-compose.yml up -d
-docker compose -f compose/docker-compose.yml ps
+cd "/home/obey/Documents/Asta Asa Abadi/Website/compose"
+docker compose up -d                          # start (migrations run automatically)
+docker compose ps                             # status
+docker compose restart                        # restart
+docker compose logs -f web                    # errors / logs
+docker compose up -d --force-recreate web     # after editing .env
+docker compose up -d --build                  # after changing requirements/ or Dockerfile
+docker compose down                           # stop (never add -v: it deletes the database)
 ```
+
+The site runs at http://localhost:8000. Uploaded documents are stored in `media/` (ignored by Git).
 
 ### Preparing Django tables
 
@@ -136,7 +150,7 @@ docker exec compose-web-1 python manage.py test apps
 
 ## 9. Next operational steps
 
-1. Create a Django superuser for authorized General Ledger access.
+1. Create portal accounts from `/ledger/users/` (a superuser can be created with `docker exec -it compose-web-1 python manage.py createsuperuser`).
 2. Configure an internal reverse proxy and identity provider before production deployment.
 3. Add Celery worker services for asynchronous ingestion and categorization.
 
@@ -156,3 +170,40 @@ Configuration (`.env`, then recreate the container with `docker compose up -d`):
 - `GEMINI_TIMEOUT_SECONDS` — default 180. Reading is synchronous during the upload request.
 
 Documents are sent to Google; use a paid Gemini API tier so the data is not used for training.
+
+## 10. Portal accounts (internal CMS)
+
+Administrators manage who can sign in to the client portal at **`/ledger/users/`** (sidebar: **◎ Pengguna**). Roles are Django groups, created and refreshed automatically by `apps/portal_users/roles.py` after every `migrate`.
+
+| Role | Group | Can do |
+| --- | --- | --- |
+| Super admin | `is_superuser` | Everything; only another super admin can edit it |
+| Administrator | Administrator Portal | Manage accounts, Chart of Accounts, journals, statements |
+| Akuntan | Akuntan | Import statements, create/post/reverse journals, edit Chart of Accounts |
+| Klien (lihat saja) | Klien (lihat saja) | View only |
+
+| Route | Action |
+| --- | --- |
+| `/ledger/users/` | List, search, filter by role/status, recent security activity |
+| `/ledger/users/new/` | Create an account (generated password shown once, or set manually) |
+| `/ledger/users/<id>/` | Edit name, email, role, active status |
+| `/ledger/users/<id>/password/` | Reset password (signs the account out everywhere) |
+| `/ledger/users/<id>/status/` | Activate / deactivate (POST) |
+| `/ledger/users/<id>/delete/` | Delete (POST; refused when the account already recorded data — deactivate instead) |
+| `/ledger/users/my-password/` | Any user changes their own password |
+
+Safety rules: users cannot deactivate, delete or change the role of their own account; at least one active administrator must remain; passwords follow Django validators (min. 10 characters, not common, not numeric-only, not similar to the username). Logins, failed logins, logouts and every account change are written to `audit.SecurityEventLog` with the client IP. View-only accounts do not see action buttons, and forbidden actions show the branded `templates/403.html` page.
+
+## 11. Branding, themes and language
+
+- **Logo:** vector mark from the brand draft (`Draft Llogo AAA 2.pdf`). Inline SVG partials `templates/partials/logo_full.html` and `logo_mark.html` follow the CSS `color`; static files in `static/img/` (`asta-asa-abadi-logo.svg`, `-mark.svg`, `-logo-dark.png`, `-logo-white.png`, favicons). The logo also appears in the Django admin header and PDF/PNG statement exports.
+- **Landing page:** `templates/landing/index.html`, `static/css/landing.css`, `static/js/company.js` — immersive hero with the logo mark, growth-pulse canvas, scroll reveals, solid navbar; motion is disabled for `prefers-reduced-motion`.
+- **Day / dark theme:** `templates/partials/theme_init.html` applies the theme before first paint; `static/js/theme.js` handles the toggle (public header and portal sidebar). Default follows the browser/OS setting; a manual choice is stored in `localStorage` (`aaa-theme`).
+- **Language (ID/EN):** follows the browser language (Indonesian → ID, everything else → EN) until the visitor uses the toggle (`aaa-language-choice`). Portal pages are Indonesian.
+- **Portal styles:** `static/css/platform.css` (light theme plus `:root[data-theme="dark"]` overrides at the end of the file).
+
+## 12. Source control
+
+- Remote: `https://github.com/adiartalaksana/asta_webiste` (branch `main`).
+- Git ignores `.env`, `.venv/`, caches, `staticfiles/` and **`media/`** (client bank statements must never be committed). `.env.example` holds placeholders only.
+- Pushing needs GitHub credentials on this machine (SSH key or a fine-grained token with *Contents: Read and write*), then `git push -u origin main`.

@@ -9,7 +9,7 @@ from django.shortcuts import redirect
 from django.urls import include, path, reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
-from django.views.generic import TemplateView
+from django.views.generic import RedirectView, TemplateView
 
 
 def healthcheck(_request):
@@ -58,7 +58,10 @@ urlpatterns = [
     path("login/", portal_login, name="portal-login"),
     path("logout/", portal_logout, name="portal-logout"),
     path("admin/", admin.site.urls),
-    path("ledger/pengguna/", include("apps.portal_users.urls")),
+    path("ledger/users/", include("apps.portal_users.urls")),
+    # Old Indonesian links (bookmarks) keep working.
+    path("ledger/pengguna/", RedirectView.as_view(pattern_name="portal_users:list", permanent=True)),
+    path("ledger/pengguna/kata-sandi-saya/", RedirectView.as_view(pattern_name="portal_users:my-password", permanent=True)),
     path("ledger/", include("apps.ledger.urls")),
     path("health/", healthcheck, name="healthcheck"),
 ]
