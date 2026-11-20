@@ -40,6 +40,25 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Agent editor: refill the default instruction; confirm before switching the reader off.
+  document.querySelectorAll("[data-fill-default]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const field = button.closest(".cms-field");
+      const textarea = field?.querySelector("textarea");
+      const template = field?.querySelector("template[data-default-instruction]");
+      if (!textarea || !template) return;
+      if (textarea.value.trim() && !window.confirm("Ganti isi instruksi dengan instruksi bawaan? (Belum disimpan sampai Anda menekan Simpan.)")) return;
+      textarea.value = template.innerHTML.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&amp;/g, "&").trim();
+      textarea.focus();
+    });
+  });
+  document.querySelectorAll("form[data-confirm-disable]").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      const enabled = form.querySelector("input[name='is_enabled']");
+      if (enabled && !enabled.checked && !window.confirm(form.dataset.confirmDisable)) event.preventDefault();
+    });
+  });
+
   // Ask before destructive or irreversible actions: <form data-confirm="...">.
   document.querySelectorAll("form[data-confirm]").forEach((form) => {
     form.addEventListener("submit", (event) => {

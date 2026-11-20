@@ -77,12 +77,12 @@ Immutable journal lines + audit hash-chain event
 | `/login/`, `/logout/` | Portal sign-in (keeps `?next=`) and sign-out (POST) | Public / signed-in |
 | `/ledger/` | General Ledger dashboard | Any portal account |
 | `/ledger/journals/`, `/ledger/accounts/`, `/ledger/bank-statements/`, `/ledger/reconciliation/`, `/ledger/audit/` | Ledger pages | Any portal account (actions need role permissions) |
-| `/ledger/users/` | Account CMS (see section 10) | Administrator / Super admin |
-| `/ledger/users/my-password/` | Change own password | Any portal account |
-| `/admin/` | Django administration (Chart of Accounts, currencies) | Administrator, Akuntan, Super admin |
+| `/<CONTROL_URL_PATH>/` (secret, from `.env`) | Internal CMS: client portal accounts, AI agents, activity (see section 10). Separate from the portal, no login | Access token only |
+| `/ledger/account/password/` | Change own password | Any portal account |
+| `/<ADMIN_URL_PATH>/` (secret, from `.env`) | Django administration (Chart of Accounts, currencies) | Access token, then Administrator / Akuntan / Super admin login |
 | `/health/` | Service health response | Platform monitoring |
 
-Unauthenticated visitors are sent to the landing-page login popup and returned to the requested page after signing in. Old Indonesian links `/ledger/pengguna/...` redirect to `/ledger/users/...`.
+Unauthenticated visitors are sent to the landing-page login popup and returned to the requested page after signing in. `/admin/`, `/ledger/control/` and older CMS links return 404. Only the password-change links `/ledger/users/my-password/` and `/ledger/pengguna/kata-sandi-saya/` still redirect.
 
 ## 7. Database and environment
 
@@ -150,7 +150,7 @@ docker exec compose-web-1 python manage.py test apps
 
 ## 9. Next operational steps
 
-1. Create portal accounts from `/ledger/users/` (a superuser can be created with `docker exec -it compose-web-1 python manage.py createsuperuser`).
+1. Create portal accounts from the control center (`/<CONTROL_URL_PATH>/users/`) (a superuser can be created with `docker exec -it compose-web-1 python manage.py createsuperuser`).
 2. Configure an internal reverse proxy and identity provider before production deployment.
 3. Add Celery worker services for asynchronous ingestion and categorization.
 
@@ -171,28 +171,70 @@ Configuration (`.env`, then recreate the container with `docker compose up -d`):
 
 Documents are sent to Google; use a paid Gemini API tier so the data is not used for training.
 
-## 10. Portal accounts (internal CMS)
+## 10. Control center (Pusat Kendali)
 
-Administrators manage who can sign in to the client portal at **`/ledger/users/`** (sidebar: **◎ Pengguna**). Roles are Django groups, created and refreshed automatically by `apps/portal_users/roles.py` after every `migrate`.
+A separate internal CMS that holds only internal settings. It is **not part of the client portal**: it has its own layout (`templates/control/base.html`: logo, tabs, theme toggle, **Kunci CMS**), no portal account login, and no link from the public site or the portal. The access token is the only key; actions are logged as **CMS (token)**.
+
+### Hidden route and access token
+
+| `.env` variable | Purpose |
+| --- | --- |
+| `CONTROL_URL_PATH` | Secret URL prefix of the control center (random slug) |
+| `ADMIN_URL_PATH` | Secret URL prefix of Django admin (random slug) |
+| `ADMIN_ACCESS_TOKEN` | Token asked once per browser session before either area opens. Empty = both areas closed (404) |
+| `ADMIN_UNLOCK_HOURS` | How long an unlock lasts (default 8) |
+
+- Gate: `apps/portal_users/internal_gate.py` (`InternalAreaGate` middleware). Both secret prefixes show the token page; any other guessed path (e.g. `/admin/`, `/ledger/control/`) is a plain **404**. A portal login never opens the CMS. **Kunci CMS** removes the unlock from the browser without signing out of the portal. Django admin: the token page comes before the admin login.
+- Token check is constant-time; 5 wrong tokens from one IP lock the form for 15 minutes; unlocks and failures are logged (Aktivitas → "Token akses internal"). Changing `ADMIN_ACCESS_TOKEN` invalidates every existing unlock.
+- Secret prefixes are registered as hidden routes, so Django's DEBUG 404 page prints `[hidden]/` instead of the path. Responses carry `X-Robots-Tag: noindex, nofollow` and `Cache-Control: no-store`.
+- After editing these values run `docker compose up -d --force-recreate web`. Show your current values with `grep -E 'CONTROL_URL_PATH|ADMIN_URL_PATH|ADMIN_ACCESS_TOKEN' .env`.
+
+### Tabs
+
+| Tab | Route | Purpose |
+| --- | --- | --- |
+| Ringkasan | `/<CONTROL_URL_PATH>/` | Account counts, Gemini connection status (API key, model, reader on/off, documents read), agent pipeline, latest activity |
+| Akun portal | `/<CONTROL_URL_PATH>/users/` | Client portal accounts (below) |
+| Agen AI | `/<CONTROL_URL_PATH>/agents/` | One AI agent per process with editable instructions (below) |
+| Aktivitas | `/<CONTROL_URL_PATH>/activity/` | Full security log, filter by login / account / agent changes, search by user or IP |
+
+### Portal accounts
+
+Roles are Django groups, created and refreshed automatically by `apps/portal_users/roles.py` after every `migrate`.
 
 | Role | Group | Can do |
 | --- | --- | --- |
 | Super admin | `is_superuser` | Everything; only another super admin can edit it |
-| Administrator | Administrator Portal | Manage accounts, Chart of Accounts, journals, statements |
+| Administrator | Administrator Portal | Full portal access: Chart of Accounts (Django admin), journals, statements, audit. Does **not** manage accounts or agents (CMS only) |
 | Akuntan | Akuntan | Import statements, create/post/reverse journals, edit Chart of Accounts |
 | Klien (lihat saja) | Klien (lihat saja) | View only |
 
 | Route | Action |
 | --- | --- |
-| `/ledger/users/` | List, search, filter by role/status, recent security activity |
-| `/ledger/users/new/` | Create an account (generated password shown once, or set manually) |
-| `/ledger/users/<id>/` | Edit name, email, role, active status |
-| `/ledger/users/<id>/password/` | Reset password (signs the account out everywhere) |
-| `/ledger/users/<id>/status/` | Activate / deactivate (POST) |
-| `/ledger/users/<id>/delete/` | Delete (POST; refused when the account already recorded data — deactivate instead) |
-| `/ledger/users/my-password/` | Any user changes their own password |
+| `/<CONTROL_URL_PATH>/users/` | List, search, filter by role/status |
+| `/<CONTROL_URL_PATH>/users/new/` | Create an account (generated password shown once, or set manually) |
+| `/<CONTROL_URL_PATH>/users/<id>/` | Edit name, email, role, active status |
+| `/<CONTROL_URL_PATH>/users/<id>/password/` | Reset password (signs the account out everywhere) |
+| `/<CONTROL_URL_PATH>/users/<id>/status/` | Activate / deactivate (POST) |
+| `/<CONTROL_URL_PATH>/users/<id>/delete/` | Delete (POST; refused when the account already recorded data — deactivate instead) |
+| `/ledger/account/password/` | Any user changes their own password |
 
-Safety rules: users cannot deactivate, delete or change the role of their own account; at least one active administrator must remain; passwords follow Django validators (min. 10 characters, not common, not numeric-only, not similar to the username). Logins, failed logins, logouts and every account change are written to `audit.SecurityEventLog` with the client IP. View-only accounts do not see action buttons, and forbidden actions show the branded `templates/403.html` page.
+Safety rules: the last active super admin cannot be deactivated or deleted; passwords follow Django validators (min. 10 characters, not common, not numeric-only, not similar to the username). Logins, failed logins, logouts, account changes and agent changes are written to `audit.SecurityEventLog` with the client IP. View-only accounts do not see action buttons, and forbidden actions show the branded `templates/403.html` page.
+
+### AI agents (instruction per process)
+
+Models `ai_engine.AgentProfile` and `AgentInstructionVersion`; logic in `apps/ai_engine/agents.py`. Default agents are created on `migrate`.
+
+| # | Process | Agent | Role in the Gemini request |
+| --- | --- | --- | --- |
+| 01 | `statement_reader` | Pembaca rekening koran | Transcription rules; owns the model and temperature. Switching it off disables PDF/image reading |
+| 02 | `account_mapper` | Pemeta akun COA | Rules for `suggested_account_code`; receives the active Chart of Accounts. Off = no suggestions |
+| 03 | `statement_summarizer` | Perangkum & rekap | Summary style for the review page. Off = no summary |
+
+- All three instructions are composed (in this order) into **one** Gemini call per document, after a fixed **SYSTEM CONTRACT** (JSON schema, amount/date formats, money in/out). The contract is locked in code so edited instructions cannot break the server-side balance checks.
+- Every save creates a new version with an optional change note; any earlier version can be restored (restore also creates a new version). "Pratinjau prompt lengkap" (`/<CONTROL_URL_PATH>/agents/preview/`) shows the exact text sent to Gemini.
+- Each AI-read document stores the agent versions that read it (`ai_result.agents`), shown on the document review page.
+- Model name is validated (e.g. `gemini-flash-latest`, `gemini-2.5-pro`); empty = `GEMINI_MODEL` from `.env`. Temperature 0–1 (0 recommended for financial figures).
 
 ## 11. Branding, themes and language
 

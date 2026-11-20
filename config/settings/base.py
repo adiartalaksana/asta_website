@@ -29,6 +29,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "apps.portal_users.internal_gate.InternalAreaGate",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -88,3 +89,10 @@ SECURE_HSTS_PRELOAD = True
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 GEMINI_TIMEOUT_SECONDS = int(os.getenv("GEMINI_TIMEOUT_SECONDS", "180"))
+
+# Internal areas (control center CMS and Django admin): secret URL prefixes + access token.
+# Leave ADMIN_ACCESS_TOKEN empty to close both areas completely (they answer 404).
+ADMIN_ACCESS_TOKEN = os.getenv("ADMIN_ACCESS_TOKEN", "")
+CONTROL_URL_PATH = os.getenv("CONTROL_URL_PATH", "").strip("/") or "internal-control-not-configured"
+ADMIN_URL_PATH = os.getenv("ADMIN_URL_PATH", "").strip("/") or "internal-admin-not-configured"
+ADMIN_UNLOCK_HOURS = int(os.getenv("ADMIN_UNLOCK_HOURS", "8"))

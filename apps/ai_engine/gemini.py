@@ -70,21 +70,6 @@ RESPONSE_SCHEMA = {
     "required": ["is_bank_statement", "opening_balance", "closing_balance", "transactions", "summary", "warnings"],
 }
 
-PROMPT = """You are an accounting assistant reading an Indonesian bank statement (rekening koran / mutasi rekening).
-Transcribe it exactly. Rules:
-- Include EVERY transaction row on EVERY page, in the printed order. Do not merge, skip or invent rows.
-- Skip rows that are only carried-forward/opening/closing balance lines (e.g. "SALDO AWAL", "SALDO AKHIR"); put those values in opening_balance / closing_balance.
-- Amounts: copy digits exactly as printed, converted to plain decimals ("Rp 1.234.567,89" -> "1234567.89").
-- money_in is money received by the account holder (CR / Kredit / Masuk); money_out is money leaving (DB / Debet / Keluar). Exactly one of them is filled per row.
-- If the statement prints no opening balance, derive it from the first row's balance and amount.
-- Dates as YYYY-MM-DD. Indonesian statements use day/month order.
-- suggested_account_code: choose from this chart of accounts only (code - name - type), or leave empty:
-{accounts}
-- summary: a recap in Bahasa Indonesia of the period, number of transactions, total in/out, the largest or notable transactions and anything unusual.
-- warnings: list anything blurry, cut off, ambiguous or inconsistent. Never guess silently.
-If the document is not a bank statement, set is_bank_statement=false and explain in warnings."""
-
-
 def is_configured() -> bool:
     return bool(getattr(settings, "GEMINI_API_KEY", ""))
 
@@ -97,23 +82,29 @@ def read_bank_statement(content: bytes, mime_type: str, accounts_text: str) -> d
     if len(content) > MAX_INLINE_BYTES:
         raise GeminiError("Dokumen terlalu besar untuk dibaca AI (maksimum 14 MB). Pisahkan per bulan atau kompres file.")
 
-    model = settings.GEMINI_MODEL
+    from .agents import MAPPER, READER, SUMMARIZER, compose_prompt, load_configs
+
+    configs = load_configs()
+    reader = configs[READER]
+    if not reader.is_enabled:
+        raise GeminiError("Agen pembaca rekening koran sedang dinonaktifkan oleh administrator (Pusat Kendali → Agen AI).")
+    model = reader.model_name
     body = {
         "contents": [{
             "role": "user",
             "parts": [
                 {"inline_data": {"mime_type": mime_type, "data": base64.b64encode(content).decode()}},
-                {"text": PROMPT.format(accounts=accounts_text or "(belum ada akun)")},
+                {"text": compose_prompt(accounts_text, configs)},
             ],
         }],
         "generationConfig": {
-            "temperature": 0,
+            "temperature": float(reader.temperature),
             "responseMimeType": "application/json",
             "responseSchema": RESPONSE_SCHEMA,
             "maxOutputTokens": 65536,
         },
     }
-    payload = _post(API_URL.format(model=model), api_key, body)
+    payload = _post(API_URL.format(model=model), api_key, body, model=model)
 
     feedback = payload.get("promptFeedback") or {}
     if feedback.get("blockReason"):
@@ -133,10 +124,17 @@ def read_bank_statement(content: bytes, mime_type: str, accounts_text: str) -> d
     if not isinstance(result, dict):
         raise GeminiError("Hasil Gemini tidak dapat diproses. Coba baca ulang dokumen.")
     result["_model"] = payload.get("modelVersion") or model
+    result["_agents"] = {process: {"version": config.version, "enabled": config.is_enabled} for process, config in configs.items()}
+    if not configs[MAPPER].is_enabled:
+        for row in result.get("transactions") or []:
+            if isinstance(row, dict):
+                row["suggested_account_code"] = ""
+    if not configs[SUMMARIZER].is_enabled:
+        result["summary"] = ""
     return result
 
 
-def _post(url: str, api_key: str, body: dict, attempts: int = 3) -> dict:
+def _post(url: str, api_key: str, body: dict, attempts: int = 3, model: str = "") -> dict:
     data = json.dumps(body).encode()
     for attempt in range(1, attempts + 1):
         request = Request(
@@ -157,7 +155,7 @@ def _post(url: str, api_key: str, body: dict, attempts: int = 3) -> dict:
             if error.code in (401, 403) or "API key" in detail:
                 raise GeminiError("GEMINI_API_KEY tidak valid atau tidak memiliki akses ke model ini.") from error
             if error.code == 404:
-                raise GeminiError(f"Model Gemini '{settings.GEMINI_MODEL}' tidak ditemukan. Periksa GEMINI_MODEL.") from error
+                raise GeminiError(f"Model Gemini '{model or settings.GEMINI_MODEL}' tidak ditemukan. Periksa model di Pusat Kendali → Agen AI atau GEMINI_MODEL.") from error
             if error.code == 429:
                 raise GeminiError("Kuota Gemini habis atau terlalu banyak permintaan. Coba lagi beberapa saat lagi.") from error
             if error.code == 400:

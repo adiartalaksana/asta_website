@@ -1,0 +1,6 @@
+<nav class="control-tabs" aria-label="Menu CMS">
+  <a class="{% if control_tab == 'overview' %}active{% endif %}" href="{% url 'portal_users:control' %}">Ringkasan</a>
+  <a class="{% if control_tab == 'users' %}active{% endif %}" href="{% url 'portal_users:list' %}">Akun portal</a>
+  <a class="{% if control_tab == 'agents' %}active{% endif %}" href="{% url 'portal_users:agent-list' %}">Agen AI</a>
+  <a class="{% if control_tab == 'activity' %}active{% endif %}" href="{% url 'portal_users:activity' %}">Aktivitas</a>
+</nav>

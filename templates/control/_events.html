@@ -1,0 +1,10 @@
+<ul class="control-events">
+  {% for event in events %}
+  <li class="event-{{ event.group }}{% if event.event_type == 'auth.login_failed' or event.event_type == 'internal.unlock_failed' %} is-failed{% endif %}">
+    <time>{{ event.created_at|date:"d M Y, H:i" }}</time>
+    <span class="event-tag">{{ event.group|upper }}</span>
+    <span><b>{{ event.who }}</b> {{ event.label|lower }}{% if event.subject %} <b>{{ event.subject }}</b>{% endif %}{% if event.agent %} <b>{{ event.agent }}</b> → v{{ event.version }}{% endif %}</span>
+    <small>{{ event.ip_address|default:"" }}</small>
+  </li>
+  {% empty %}<li class="empty">Belum ada aktivitas tercatat.</li>{% endfor %}
+</ul>

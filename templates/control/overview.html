@@ -1,0 +1,47 @@
+{% extends "control/base.html" %}
+{% block title %}Pusat Kendali{% endblock %}
+{% block content %}
+<header class="dash-header"><div><p class="eyebrow">PUSAT KENDALI</p><h1>Pengaturan internal.</h1></div><div class="user">AKSES <b>TOKEN CMS</b></div></header>
+{% if messages %}{% for message in messages %}<p class="portal-message {{ message.tags }}">{{ message }}</p>{% endfor %}{% endif %}
+
+<div class="control-grid">
+  <section class="panel control-card">
+    <div class="panel-title"><p class="eyebrow">AKUN PORTAL KLIEN</p><a href="{% url 'portal_users:list' %}">Kelola →</a></div>
+    <div class="control-numbers">
+      <div><strong>{{ user_stats.active }}</strong><span>aktif</span></div>
+      <div><strong>{{ user_stats.staff }}</strong><span>tim internal</span></div>
+      <div><strong>{{ user_stats.inactive }}</strong><span>nonaktif</span></div>
+    </div>
+    <div class="cms-actions"><a class="button gold" href="{% url 'portal_users:create' %}">+ Tambah pengguna</a></div>
+  </section>
+
+  <section class="panel control-card">
+    <div class="panel-title"><p class="eyebrow">KONEKSI AI (GEMINI)</p><a href="{% url 'portal_users:agent-list' %}">Agen AI →</a></div>
+    <ul class="control-status">
+      <li class="{% if ai_status.configured %}ok{% else %}fail{% endif %}"><b>{% if ai_status.configured %}✓{% else %}✕{% endif %}</b> API key {% if ai_status.configured %}terpasang{% else %}belum diatur — isi <code>GEMINI_API_KEY</code> di <code>.env</code>{% endif %}</li>
+      <li class="{% if ai_status.reader_enabled %}ok{% else %}warn{% endif %}"><b>{% if ai_status.reader_enabled %}✓{% else %}!{% endif %}</b> Pembaca PDF/gambar {% if ai_status.reader_enabled %}aktif{% else %}dinonaktifkan{% endif %}</li>
+      <li class="ok"><b>◆</b> Model: <code>{{ ai_status.model }}</code></li>
+      <li class="ok"><b>▤</b> {{ ai_status.documents }} dokumen dibaca AI{% if ai_status.last_document %} · terakhir {{ ai_status.last_document.updated_at|date:"d M Y, H:i" }}{% endif %}</li>
+    </ul>
+  </section>
+</div>
+
+<section class="panel ledger-list-panel">
+  <div class="panel-title"><p class="eyebrow">AGEN AI PER PROSES</p><span>{{ enabled_agents }} dari {{ agents|length }} aktif</span></div>
+  <div class="agent-pipeline">
+    {% for agent in agents %}
+    <a class="agent-step{% if not agent.is_enabled %} is-off{% endif %}" href="{% url 'portal_users:agent-edit' agent.process %}">
+      <span class="agent-index">{{ forloop.counter|stringformat:"02d" }}</span>
+      <b>{{ agent.name }}</b>
+      <small>{{ agent.description }}</small>
+      <span class="agent-meta"><span class="{% if agent.is_enabled %}posted{% else %}draft{% endif %}">● {% if agent.is_enabled %}AKTIF{% else %}NONAKTIF{% endif %}</span> · v{{ agent.version }} · {{ agent.updated_at|date:"d M Y" }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel ledger-list-panel">
+  <div class="panel-title"><p class="eyebrow">AKTIVITAS TERBARU</p><a href="{% url 'portal_users:activity' %}">Lihat semua →</a></div>
+  {% include "control/_events.html" %}
+</section>
+{% endblock %}

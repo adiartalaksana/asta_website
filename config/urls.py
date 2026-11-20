@@ -6,10 +6,26 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import JsonResponse
 from django.shortcuts import redirect
-from django.urls import include, path, reverse
+from django.conf import settings
+from django.urls import URLResolver, include, path, reverse
+from django.urls.resolvers import RoutePattern
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django.views.generic import RedirectView, TemplateView
+
+from apps.portal_users.views import my_password
+
+
+class HiddenRoutePattern(RoutePattern):
+    """Secret prefix that is never printed (e.g. on Django's DEBUG 404 page)."""
+
+    def __str__(self):
+        return "[hidden]/"
+
+
+def hidden_include(route, included):
+    urlconf_module, app_name, namespace = included
+    return URLResolver(HiddenRoutePattern(route, is_endpoint=False), urlconf_module, app_name=app_name, namespace=namespace)
 
 
 def healthcheck(_request):
@@ -57,11 +73,15 @@ urlpatterns = [
     path("", TemplateView.as_view(template_name="landing/index.html"), name="home"),
     path("login/", portal_login, name="portal-login"),
     path("logout/", portal_logout, name="portal-logout"),
-    path("admin/", admin.site.urls),
-    path("ledger/users/", include("apps.portal_users.urls")),
-    # Old Indonesian links (bookmarks) keep working.
-    path("ledger/pengguna/", RedirectView.as_view(pattern_name="portal_users:list", permanent=True)),
-    path("ledger/pengguna/kata-sandi-saya/", RedirectView.as_view(pattern_name="portal_users:my-password", permanent=True)),
+    path("ledger/account/password/", my_password, name="account-password"),
+    path("ledger/users/my-password/", RedirectView.as_view(pattern_name="account-password", permanent=True)),
+    path("ledger/pengguna/kata-sandi-saya/", RedirectView.as_view(pattern_name="account-password", permanent=True)),
     path("ledger/", include("apps.ledger.urls")),
     path("health/", healthcheck, name="healthcheck"),
+]
+
+# Internal areas: secret prefixes from .env, guarded by InternalAreaGate (token + internal user).
+urlpatterns += [
+    hidden_include(f"{settings.CONTROL_URL_PATH}/", include("apps.portal_users.urls")),
+    hidden_include(f"{settings.ADMIN_URL_PATH}/", admin.site.urls),
 ]

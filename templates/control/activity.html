@@ -1,0 +1,21 @@
+{% extends "control/base.html" %}
+{% block title %}Aktivitas{% endblock %}
+{% block content %}
+<header class="dash-header"><div><p class="eyebrow">PUSAT KENDALI / AKTIVITAS</p><h1>Log keamanan & perubahan.</h1></div></header>
+<section class="panel ledger-list-panel">
+  <form class="cms-toolbar" method="get">
+    <input type="search" name="q" value="{{ query }}" placeholder="Cari nama pengguna atau IP" aria-label="Cari aktivitas">
+    <select name="group" aria-label="Jenis aktivitas"><option value="">Semua aktivitas</option>{% for key, label in groups %}<option value="{{ key }}" {% if key == group %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    <button class="button outline" type="submit">Terapkan</button>
+    {% if query or group %}<a class="table-link" href="{% url 'portal_users:activity' %}">Reset filter</a>{% endif %}
+  </form>
+  {% include "control/_events.html" with events=page.object_list %}
+  {% if page.has_other_pages %}
+  <nav class="control-pager">
+    {% if page.has_previous %}<a class="table-link" href="?page={{ page.previous_page_number }}&group={{ group }}&q={{ query|urlencode }}">← Sebelumnya</a>{% endif %}
+    <span>Halaman {{ page.number }} dari {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a class="table-link" href="?page={{ page.next_page_number }}&group={{ group }}&q={{ query|urlencode }}">Berikutnya →</a>{% endif %}
+  </nav>
+  {% endif %}
+</section>
+{% endblock %}

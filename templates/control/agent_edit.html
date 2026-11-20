@@ -1,0 +1,54 @@
+{% extends "control/base.html" %}
+{% block title %}{{ agent.name }}{% endblock %}
+{% block content %}
+<header class="dash-header"><div><p class="eyebrow">PUSAT KENDALI / AGEN AI / V{{ agent.version }}</p><h1>{{ agent.name }}</h1></div><div class="detail-actions"><a class="text-link" href="{% url 'portal_users:agent-list' %}">← Semua agen</a></div></header>
+{% if messages %}{% for message in messages %}<p class="portal-message {{ message.tags }}">{{ message }}</p>{% endfor %}{% endif %}
+
+<div class="cms-layout">
+  <section class="panel cms-card">
+    <p class="eyebrow">INSTRUKSI AGEN</p>
+    <p class="cms-copy">{{ agent.description }}</p>
+    <form method="post" class="cms-form" novalidate {% if owns_call %}data-confirm-disable="Menonaktifkan agen pembaca akan menghentikan pembacaan PDF/gambar. Lanjutkan?"{% endif %}>
+      {% csrf_token %}
+      {% for error in form.non_field_errors %}<p class="portal-message error wide">{{ error }}</p>{% endfor %}
+      <div class="cms-field wide{% if form.instruction.errors %} has-error{% endif %}">
+        <label for="{{ form.instruction.id_for_label }}">{{ form.instruction.label }}</label>
+        {{ form.instruction }}
+        <small>Tulis dalam bahasa Inggris atau Indonesia. Jelaskan aturan bisnis, bukan format JSON — format jawaban sudah dikunci oleh sistem.</small>
+        {% for error in form.instruction.errors %}<small class="cms-error">{{ error }}</small>{% endfor %}
+        <button class="table-link agent-reset" type="button" data-fill-default>Isi dengan instruksi bawaan</button>
+        <template data-default-instruction>{{ default_instruction }}</template>
+      </div>
+      {% if owns_call %}
+        {% include "ledger/users/_field.html" with field=form.model_name %}
+        {% include "ledger/users/_field.html" with field=form.temperature %}
+      {% endif %}
+      {% include "ledger/users/_field.html" with field=form.is_enabled wide=True %}
+      {% include "ledger/users/_field.html" with field=form.note wide=True %}
+      <button class="button gold wide" type="submit">Simpan sebagai versi baru <b>→</b></button>
+    </form>
+  </section>
+
+  <aside class="cms-side">
+    <section class="panel cms-card">
+      <p class="eyebrow">ATURAN TERKUNCI (SISTEM)</p>
+      <p class="cms-copy">Selalu dikirim sebelum instruksi agen dan tidak dapat diubah dari sini, agar hasil AI tetap dapat diperiksa server.</p>
+      <a class="table-link" href="{% url 'portal_users:agent-preview' %}">Lihat prompt lengkap →</a>
+    </section>
+    <section class="panel cms-card">
+      <p class="eyebrow">RIWAYAT VERSI</p>
+      <ol class="agent-versions">
+        {% for version in versions %}
+        <li class="{% if version.version == agent.version %}is-current{% endif %}">
+          <div><b>v{{ version.version }}</b>{% if version.version == agent.version %} <span class="posted">SAAT INI</span>{% endif %}{% if not version.is_enabled %} <span class="draft">NONAKTIF</span>{% endif %}
+            <small>{{ version.created_at|date:"d M Y, H:i" }} · {{ version.created_by.username|default:"sistem" }}</small>
+            {% if version.note %}<small class="agent-note">“{{ version.note }}”</small>{% endif %}
+          </div>
+          {% if version.version != agent.version %}<form method="post" action="{% url 'portal_users:agent-restore' agent.process version.version %}" data-confirm="Pulihkan instruksi versi {{ version.version }}? Ini akan disimpan sebagai versi baru.">{% csrf_token %}<button class="reverse-journal" type="submit">Pulihkan</button></form>{% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </section>
+  </aside>
+</div>
+{% endblock %}

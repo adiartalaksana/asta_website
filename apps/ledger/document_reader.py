@@ -220,6 +220,7 @@ def analyse(raw: dict) -> dict:
         "closing_balance": _fmt(closing),
         "transactions": rows,
         "summary": _text(raw.get("summary"), 4000),
+        "agents": raw.get("_agents") if isinstance(raw.get("_agents"), dict) else {},
         "warnings": [_text(w, 500) for w in (raw.get("warnings") or []) if _text(w)][:20],
         "recap": {
             "count": len(rows),

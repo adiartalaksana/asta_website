@@ -1,0 +1,31 @@
+{% load static %}<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0b1017">
+  <title>{% block title %}CMS{% endblock %} | CMS Internal Asta Asa Abadi</title>
+  {% include "partials/favicons.html" %}
+  {% include "partials/theme_init.html" %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/platform.css' %}">
+  <script src="{% static 'js/theme.js' %}" defer></script>
+  <script src="{% static 'js/ledger.js' %}" defer></script>
+</head>
+<body class="dashboard cms-shell">
+  <header class="cms-topbar">
+    <a class="cms-brand" href="{% url 'portal_users:control' %}" aria-label="CMS Internal Asta Asa Abadi">{% include "partials/logo_full.html" with id_prefix="cb" class="brand-logo" %}<span>CMS INTERNAL</span></a>
+    {% include "control/_tabs.html" %}
+    <div class="cms-topbar-actions">
+      {% include "partials/theme_toggle.html" with extra_class="cms-theme" %}
+      <form method="post" action="{% url 'portal_users:lock' %}">{% csrf_token %}<button class="cms-lock" type="submit" title="Hapus akses token dari browser ini">Kunci CMS</button></form>
+    </div>
+  </header>
+  <main class="dashboard-main cms-main">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

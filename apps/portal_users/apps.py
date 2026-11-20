@@ -11,4 +11,10 @@ class PortalUsersConfig(AppConfig):
         from . import signals  # noqa: F401 - login/logout audit receivers
         from .roles import ensure_roles
 
-        post_migrate.connect(lambda **kwargs: ensure_roles(), sender=self, weak=False)
+        def setup(**kwargs):
+            from apps.ai_engine.agents import ensure_agents
+
+            ensure_roles()
+            ensure_agents()
+
+        post_migrate.connect(setup, sender=self, weak=False)

@@ -9,6 +9,7 @@
 <section class="document-review panel">
   <div class="panel-title"><p class="eyebrow">RINGKASAN AI · {{ document.ai_model|default:"GEMINI"|upper }}</p><span class="{% if ai.is_consistent %}posted{% else %}draft{% endif %}">{% if ai.is_consistent %}LOLOS PEMERIKSAAN{% else %}PERLU PERHATIAN{% endif %}</span></div>
   <p class="ai-meta">{% if ai.bank_name %}{{ ai.bank_name }}{% endif %}{% if ai.account_number %} · {{ ai.account_number }}{% endif %}{% if ai.account_holder %} · {{ ai.account_holder }}{% endif %}{% if ai.period_start %} · {{ ai.period_start }} s.d. {{ ai.period_end }}{% endif %}</p>
+  {% if ai.agents %}<p class="ai-meta">Dibaca oleh agen: {% for process, info in ai.agents.items %}{% if process == 'statement_reader' %}Pembaca{% elif process == 'account_mapper' %}Pemeta akun{% else %}Perangkum{% endif %} v{{ info.version }}{% if not info.enabled %} (nonaktif){% endif %}{% if not forloop.last %} · {% endif %}{% endfor %}</p>{% endif %}
   <p class="ai-summary">{{ ai.summary|default:"Gemini tidak memberikan ringkasan."|linebreaksbr }}</p>
   <div class="stat-grid ai-recap">
     <article><p>MUTASI</p><strong>{{ ai.recap.count }}</strong><small>{{ ai.recap.count_in }} masuk · {{ ai.recap.count_out }} keluar</small></article>

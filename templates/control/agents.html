@@ -1,0 +1,29 @@
+{% extends "control/base.html" %}
+{% block title %}Agen AI{% endblock %}
+{% block content %}
+<header class="dash-header"><div><p class="eyebrow">PUSAT KENDALI / AGEN AI</p><h1>Instruksi agen per proses.</h1></div><div class="detail-actions"><a class="button outline" href="{% url 'portal_users:agent-preview' %}">Pratinjau prompt lengkap</a></div></header>
+{% if messages %}{% for message in messages %}<p class="portal-message {{ message.tags }}">{{ message }}</p>{% endfor %}{% endif %}
+{% if not configured %}<p class="portal-message warning">GEMINI_API_KEY belum diatur. Instruksi tetap dapat disiapkan, tetapi dokumen PDF/gambar belum dapat dibaca sampai API key diisi di <code>.env</code>.</p>{% endif %}
+
+<section class="panel control-explainer">
+  <p class="cms-copy">Setiap dokumen PDF/gambar dibaca dalam <b>satu panggilan Gemini</b> yang menggabungkan instruksi ketiga agen di bawah secara berurutan. Format jawaban (JSON, format angka dan tanggal) dikunci oleh sistem sehingga perubahan instruksi tidak dapat merusak pemeriksaan saldo di server. Setiap simpanan membuat versi baru yang dapat dipulihkan.</p>
+  <p class="cms-copy">Model yang dipakai: <code>{{ reader_model }}</code>{% if reader_model != default_model %} (diatur di agen pembaca; bawaan .env: <code>{{ default_model }}</code>){% endif %}.</p>
+</section>
+
+<div class="agent-cards">
+  {% for agent in agents %}
+  <article class="panel agent-card{% if not agent.is_enabled %} is-off{% endif %}">
+    <div class="agent-card-head"><span class="agent-index">{{ forloop.counter|stringformat:"02d" }}</span><span class="{% if agent.is_enabled %}posted{% else %}draft{% endif %}">● {% if agent.is_enabled %}AKTIF{% else %}NONAKTIF{% endif %}</span></div>
+    <h2>{{ agent.name }}</h2>
+    <p class="cms-copy">{{ agent.description }}</p>
+    <pre class="agent-snippet">{{ agent.instruction|truncatechars:260 }}</pre>
+    <dl class="cms-meta">
+      <dt>Versi</dt><dd>v{{ agent.version }}</dd>
+      <dt>Diubah</dt><dd>{{ agent.updated_at|date:"d M Y, H:i" }}{% if agent.updated_by %} · {{ agent.updated_by.username }}{% endif %}</dd>
+      {% if agent.process == 'statement_reader' %}<dt>Model</dt><dd><code>{{ agent.model_name|default:default_model }}</code> · temp {{ agent.temperature }}</dd>{% endif %}
+    </dl>
+    <div class="cms-actions"><a class="button gold" href="{% url 'portal_users:agent-edit' agent.process %}">Atur instruksi <b>→</b></a></div>
+  </article>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,13 +1,13 @@
-{% extends "ledger/base.html" %}
+{% extends "control/base.html" %}
 {% block title %}Pengguna{% endblock %}
 {% block content %}
-<header class="dash-header"><div><p class="eyebrow">PORTAL KLIEN / PENGGUNA</p><h1>Akun portal.</h1></div><div class="detail-actions"><a class="button gold" href="{% url 'portal_users:create' %}">+ Tambah pengguna</a></div></header>
+<header class="dash-header"><div><p class="eyebrow">PUSAT KENDALI / PENGGUNA</p><h1>Akun portal klien.</h1></div><div class="detail-actions"><a class="button gold" href="{% url 'portal_users:create' %}">+ Tambah pengguna</a></div></header>
 {% if messages %}{% for message in messages %}<p class="portal-message {{ message.tags }}">{{ message }}</p>{% endfor %}{% endif %}
 
 <section class="stat-grid cms-stats">
   <article><p>TOTAL AKUN</p><strong>{{ stats.total }}</strong><small>Semua akun portal</small></article>
   <article class="balanced"><p>AKTIF</p><strong>{{ stats.active }}</strong><small>Dapat masuk ke portal</small></article>
-  <article><p>ADMINISTRATOR</p><strong>{{ stats.managers }}</strong><small>Dapat mengelola pengguna</small></article>
+  <article><p>TIM INTERNAL</p><strong>{{ stats.staff }}</strong><small>Administrator, akuntan, super admin</small></article>
   <article><p>NONAKTIF</p><strong>{{ stats.inactive }}</strong><small>Akses diblokir</small></article>
 </section>
 
@@ -22,19 +22,16 @@
   <div class="table-scroll"><table class="wide-table cms-table"><thead><tr><th>PENGGUNA</th><th>EMAIL</th><th>PERAN</th><th>STATUS</th><th>TERAKHIR MASUK</th><th>DIBUAT</th><th>AKSI</th></tr></thead><tbody>
     {% for person in users %}
     <tr class="{% if not person.is_active %}is-inactive{% endif %}">
-      <td><span class="cms-avatar" aria-hidden="true">{{ person.get_full_name|default:person.username|slice:":1"|upper }}</span><span class="cms-name"><b>{{ person.get_full_name|default:person.username }}</b><small>@{{ person.username }}{% if person.pk == request.user.pk %} · Anda{% endif %}</small></span></td>
+      <td><span class="cms-avatar" aria-hidden="true">{{ person.get_full_name|default:person.username|slice:":1"|upper }}</span><span class="cms-name"><b>{{ person.get_full_name|default:person.username }}</b><small>@{{ person.username }}</small></span></td>
       <td>{{ person.email|default:"—" }}</td>
       <td><span class="role-badge role-{{ person.role|default:'none' }}">{{ person.role_name }}</span></td>
       <td>{% if person.is_active %}<span class="posted">● AKTIF</span>{% else %}<span class="draft">● NONAKTIF</span>{% endif %}</td>
       <td>{{ person.last_login|date:"d M Y, H:i"|default:"Belum pernah" }}</td>
       <td>{{ person.date_joined|date:"d M Y" }}</td>
       <td class="row-actions">
-        {% if not person.is_superuser or request.user.is_superuser %}
           <a class="table-link" href="{% url 'portal_users:edit' person.pk %}">Kelola →</a>
-          {% if person.pk != request.user.pk %}
           <form method="post" action="{% url 'portal_users:toggle-active' person.pk %}" data-confirm="{% if person.is_active %}Nonaktifkan {{ person.username }}? Akun ini tidak akan dapat masuk ke portal.{% else %}Aktifkan kembali {{ person.username }}?{% endif %}">{% csrf_token %}<button class="{% if person.is_active %}delete-journal{% else %}post-journal{% endif %}" type="submit">{% if person.is_active %}Nonaktifkan{% else %}Aktifkan{% endif %}</button></form>
-          {% endif %}
-        {% else %}<span class="muted-line">Hanya super admin</span>{% endif %}
+
       </td>
     </tr>
     {% empty %}<tr><td colspan="7" class="empty">Tidak ada pengguna yang cocok dengan filter.</td></tr>{% endfor %}
@@ -42,11 +39,7 @@
 </section>
 
 <section class="panel ledger-list-panel cms-activity">
-  <div class="panel-title"><p class="eyebrow">AKTIVITAS KEAMANAN TERBARU</p><span>Login dan perubahan akun</span></div>
-  <ul>
-    {% for event in events %}
-    <li class="event-{{ event.event_type|slugify }}"><time>{{ event.created_at|date:"d M Y, H:i" }}</time><span><b>{{ event.actor.username|default:event.details.username|default:"—" }}</b> {{ event.label|lower }}{% if event.details.username and event.actor and event.details.username != event.actor.username %} <b>{{ event.details.username }}</b>{% endif %}</span><small>{{ event.ip_address|default:"" }}</small></li>
-    {% empty %}<li class="empty">Belum ada aktivitas tercatat.</li>{% endfor %}
-  </ul>
+  <div class="panel-title"><p class="eyebrow">AKTIVITAS KEAMANAN TERBARU</p><a href="{% url 'portal_users:activity' %}">Lihat semua →</a></div>
+  {% include "control/_events.html" %}
 </section>
 {% endblock %}

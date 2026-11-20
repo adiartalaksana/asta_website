@@ -1,0 +1,44 @@
+{% load static %}<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Akses internal | Asta Asa Abadi</title>
+  {% include "partials/favicons.html" %}
+  {% include "partials/theme_init.html" %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#07090d;--panel:#0f1720;--text:#eef3f8;--muted:#93a3b5;--line:rgba(220,232,244,.14);--accent:#a8c6e2;--input:#0a1018;--logo:#fff;color-scheme:dark}
+    :root[data-theme="light"]{--bg:#f5f7fa;--panel:#fff;--text:#121a24;--muted:#566475;--line:rgba(11,16,23,.12);--accent:#4b6f91;--input:#fff;--logo:#0b1017;color-scheme:light}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(60% 50% at 50% 30%,rgba(168,198,226,.12),transparent 70%),var(--bg);color:var(--text);font-family:"Plus Jakarta Sans",system-ui,sans-serif}
+    main{width:min(420px,100%);padding:38px 34px;border:1px solid var(--line);border-radius:22px;background:var(--panel);box-shadow:0 30px 80px rgba(0,0,0,.25)}
+    .logo{height:52px;width:auto;color:var(--logo);margin-bottom:28px}
+    p.eyebrow{margin:0 0 10px;font:500 11px "DM Mono",monospace;letter-spacing:.16em;color:var(--accent)}
+    h1{margin:0;font:700 26px/1.15 Sora,sans-serif;letter-spacing:-.02em}
+    p.lead{margin:12px 0 24px;color:var(--muted);font-size:14px;line-height:1.6}
+    label{display:grid;gap:8px;font-size:12px;font-weight:600}
+    input{height:50px;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:var(--input);color:var(--text);font:15px "DM Mono",monospace}
+    input:focus{outline:3px solid rgba(168,198,226,.25);border-color:var(--accent)}
+    button{margin-top:16px;width:100%;height:50px;border:0;border-radius:999px;background:var(--text);color:var(--bg);font:700 14px "Plus Jakarta Sans",sans-serif;cursor:pointer}
+    .error{margin:0 0 16px;padding:11px 13px;border-radius:10px;background:rgba(214,84,72,.14);border:1px solid rgba(214,84,72,.4);color:#e98a80;font-size:13px}
+  </style>
+</head>
+<body>
+  <main>
+    {% include "partials/logo_full.html" with id_prefix="ul" class="logo" label="Asta Asa Abadi" %}
+    <p class="eyebrow">AKSES INTERNAL</p>
+    <h1>Masukkan token akses.</h1>
+    <p class="lead">Area ini hanya untuk tim internal. Token akses tersimpan di konfigurasi server (<code>ADMIN_ACCESS_TOKEN</code>).</p>
+    {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+    <form method="post" autocomplete="off">
+      {% csrf_token %}
+      <label>Token akses<input name="access_token" type="password" required autofocus autocomplete="off"></label>
+      <button type="submit">Buka akses →</button>
+    </form>
+  </main>
+</body>
+</html>
